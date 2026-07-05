@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Crop-Prediction — AI-Powered Crop Yield Optimization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #000000;
+    --bg-2: #180894;
+    --surface: #182a20;
+    --surface-2: #1f3427;
+    --line: rgba(241,238,228,0.10);
+    --line-strong: rgba(241,238,228,0.20);
+    --text: #f1eee4;
+    --text-dim: #a7b8ac;
+    --text-faint: #6f8277;
+    --gold: #d4a73d;
+    --gold-dim: #8a7638;
+    --green: #74b05f;
+    --green-deep: #3c6b41;
+    --alert: #c4622d;
+    --blue: #5a95a8;
+    --radius: 4px;
+    --maxw: 1180px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family: 'Courier New', Courier, monospace;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  ::selection{background:var(--gold); color:#12200f;}
+  a{color:inherit;}
+  img{max-width:100%; display:block;}
+
+  h1,h2,h3,h4{font-family:'Fraunces',serif; font-weight:600; letter-spacing:-0.01em; line-height:1.08;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    font-size:12px;
+    color:var(--green);
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{
+    content:'';
+    width:16px; height:1px;
+    background:var(--green);
+    display:inline-block;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 32px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+
+  /* ---------- NAV ---------- */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(16,29,23,0.82);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav{
+    max-width:var(--maxw); margin:0 auto; padding:18px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Fraunces',serif; font-weight:600; font-size:19px;
+    letter-spacing:-0.01em;
+  }
+  .logo .mark{width:26px; height:26px; flex-shrink:0;}
+  .navlinks{display:flex; gap:34px; font-size:14.5px; color:var(--text-dim);}
+  .navlinks a{text-decoration:none; transition:color .2s;}
+  .navlinks a:hover, .navlinks a:focus-visible{color:var(--text);}
+  .nav-cta{
+    font-size:14px; font-weight:600; padding:9px 18px;
+    border:1px solid var(--line-strong); border-radius:var(--radius);
+    text-decoration:none; transition:border-color .2s, background .2s;
+  }
+  .nav-cta:hover, .nav-cta:focus-visible{background:var(--surface-2); border-color:var(--green);}
+  .navtoggle{display:none;}
+
+  @media(max-width:820px){
+    .navlinks{display:none;}
+    .navtoggle{
+      display:flex; background:none; border:1px solid var(--line-strong);
+      color:var(--text); padding:8px 12px; border-radius:var(--radius);
+      font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer;
+    }
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:170px 0 90px;
+    position:relative;
+    border-bottom:1px solid var(--line);
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(116,176,95,0.14), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(212,167,61,0.08), transparent 60%);
+  }
+  .hero .wrap{display:grid; grid-template-columns:1.05fr 0.95fr; gap:56px; align-items:center;}
+  @media(max-width:960px){.hero .wrap{grid-template-columns:1fr;} .hero{padding:140px 0 60px;}}
+
+  .hero h1{
+    font-size:clamp(2.4rem, 4.6vw, 3.7rem);
+    margin:18px 0 22px;
+  }
+  .hero h1 em{
+    font-style:italic; font-weight:400; color:var(--green);
+  }
+  .hero p.lede{
+    color:var(--text-dim); font-size:17.5px; max-width:46ch; margin-bottom:34px;
+  }
+  .hero-ctas{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:44px;}
+  .btn{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:15px;
+    padding:13px 24px; border-radius:var(--radius); text-decoration:none;
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+    border:1px solid transparent; transition:transform .15s, background .2s, border-color .2s;
+  }
+  .btn-primary{background:var(--green); color:#0d1a0f;}
+  .btn-primary:hover{background:#84c06d; transform:translateY(-1px);}
+  .btn-ghost{border-color:var(--line-strong); color:var(--text); background:transparent;}
+  .btn-ghost:hover{border-color:var(--gold); color:var(--gold);}
+  .btn:focus-visible{outline:2px solid var(--green); outline-offset:2px;}
+
+  .hero-stats{display:flex; gap:36px; flex-wrap:wrap;}
+  .hero-stats div{border-left:1px solid var(--line-strong); padding-left:14px;}
+  .hero-stats .num{font-family:'Fraunces',serif; font-size:1.7rem; color:var(--gold);}
+  .hero-stats .lbl{font-size:12.5px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;}
+
+  /* ---- field scan signature visual ---- */
+  .fieldscan{
+    position:relative; aspect-ratio:1/1; border-radius:6px;
+    border:1px solid var(--line-strong);
+    background:var(--bg-2);
+    overflow:hidden;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,0.6);
+  }
+  .fieldgrid{
+    position:absolute; inset:0;
+    display:grid; grid-template-columns:repeat(10,1fr); grid-template-rows:repeat(10,1fr);
+    gap:2px; padding:10px;
+  }
+  .cell{border-radius:1px; background:var(--green-deep); opacity:.55; transition:opacity 1.4s ease, background-color 1.4s ease;}
+  .scanline{
+    position:absolute; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent);
+    box-shadow:0 0 16px 3px rgba(212,167,61,0.5);
+    animation:scan 4.5s linear infinite;
+  }
+  @keyframes scan{
+    0%{top:2%;} 50%{top:96%;} 100%{top:2%;}
+  }
+  .hud{
+    position:absolute; top:14px; left:14px; right:14px;
+    display:flex; justify-content:space-between;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--gold);
+    letter-spacing:.05em; text-shadow:0 0 8px rgba(0,0,0,.8);
+    pointer-events:none;
+  }
+  .hud-bottom{
+    position:absolute; bottom:14px; left:14px; right:14px;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text);
+    text-shadow:0 0 8px rgba(0,0,0,.9);
+    pointer-events:none;
+  }
+  .hud-bottom .readout-val{font-size:20px; color:var(--gold); font-family:'Fraunces',serif; display:block;}
+  .legend{display:flex; gap:8px; align-items:center;}
+  .legend i{width:8px; height:8px; display:inline-block; border-radius:1px;}
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{padding:96px 0; border-bottom:1px solid var(--line);}
+  .sec-head{max-width:640px; margin-bottom:56px;}
+  .sec-head h2{font-size:clamp(1.8rem, 3vw, 2.5rem); margin-top:14px;}
+  .sec-head p{color:var(--text-dim); margin-top:14px; font-size:16px;}
+
+  /* ---------- PROBLEM / STATS ---------- */
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  @media(max-width:820px){.stat-row{grid-template-columns:repeat(2,1fr);}}
+  .stat-cell{background:var(--surface); padding:30px 26px;}
+  .stat-cell .big{font-family:'Fraunces',serif; font-size:2.3rem; color:var(--alert);}
+  .stat-cell.pos .big{color:var(--green);}
+  .stat-cell p{color:var(--text-dim); font-size:13.5px; margin-top:8px; font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- PIPELINE / HOW IT WORKS ---------- */
+  .pipeline{display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative;}
+  @media(max-width:960px){.pipeline{grid-template-columns:1fr;}}
+  .stage{
+    padding:30px 26px 30px 0; position:relative; border-right:1px solid var(--line);
+  }
+  .pipeline .stage:last-child{border-right:none;}
+  @media(max-width:960px){
+    .stage{border-right:none; border-bottom:1px solid var(--line); padding:26px 0;}
+    .pipeline .stage:last-child{border-bottom:none;}
+  }
+  .stage .tag{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-faint);
+    display:block; margin-bottom:10px;
+  }
+  .stage h3{font-size:1.25rem; margin-bottom:10px; color:var(--text);}
+  .stage p{color:var(--text-dim); font-size:14.5px;}
+  .stage .dot{width:9px; height:9px; border-radius:50%; background:var(--green); margin-bottom:16px; box-shadow:0 0 0 4px rgba(116,176,95,0.15);}
+
+  /* ---------- FEATURES ---------- */
+  .feat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  @media(max-width:900px){.feat-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:600px){.feat-grid{grid-template-columns:1fr;}}
+  .feat{background:var(--surface); padding:32px 28px; transition:background .25s;}
+  .feat:hover{background:var(--surface-2);}
+  .feat .ic{width:34px; height:34px; margin-bottom:18px; color:var(--gold);}
+  .feat h3{font-size:1.08rem; margin-bottom:10px; font-family:'Inter',sans-serif; font-weight:600;}
+  .feat p{color:var(--text-dim); font-size:14.5px;}
+
+  /* ---------- DASHBOARD PREVIEW ---------- */
+  .dash{
+    background:var(--surface); border:1px solid var(--line-strong); border-radius:8px;
+    padding:28px; box-shadow:0 40px 90px -40px rgba(0,0,0,0.55);
+  }
+  .dash-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; flex-wrap:wrap; gap:12px;}
+  .dash-top .field-name{font-family:'Fraunces',serif; font-size:1.3rem;}
+  .dash-top .status{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--green);
+    border:1px solid var(--green-deep); padding:5px 10px; border-radius:20px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .status i{width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green);}
+  .dash-grid{display:grid; grid-template-columns:1.4fr 1fr; gap:22px;}
+  @media(max-width:820px){.dash-grid{grid-template-columns:1fr;}}
+  .dash-card{background:var(--bg-2); border:1px solid var(--line); border-radius:6px; padding:20px;}
+  .dash-card h4{font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-faint); font-weight:500; margin-bottom:14px;}
+  .kpi-list{display:flex; flex-direction:column; gap:16px;}
+  .kpi-row{display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid var(--line); padding-bottom:12px;}
+  .kpi-row:last-child{border-bottom:none; padding-bottom:0;}
+  .kpi-row .k{color:var(--text-dim); font-size:13.5px;}
+  .kpi-row .v{font-family:'Fraunces',serif; font-size:1.25rem; color:var(--gold);}
+  .kpi-row .v.up{color:var(--green);}
+
+  /* ---------- CASE STUDY ---------- */
+  .case{
+    display:grid; grid-template-columns:0.9fr 1.1fr; gap:56px; align-items:center;
+  }
+  @media(max-width:900px){.case{grid-template-columns:1fr;}}
+  .case-quote{
+    font-family:'Fraunces',serif; font-style:italic; font-weight:400;
+    font-size:1.55rem; line-height:1.4; color:var(--text);
+  }
+  .case-attr{margin-top:20px; color:var(--text-dim); font-size:14px;}
+  .case-attr strong{color:var(--text); font-weight:600;}
+  .case-metrics{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .case-metrics .m{background:var(--surface); padding:24px 18px; text-align:center;}
+  .case-metrics .m .big{font-family:'Fraunces',serif; font-size:1.9rem; color:var(--green);}
+  .case-metrics .m p{font-size:12.5px; color:var(--text-faint); margin-top:6px; font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- CTA / CONTACT ---------- */
+  .cta-section{
+    background:linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  }
+  .cta-box{
+    display:grid; grid-template-columns:1fr 1fr; gap:50px;
+    background:var(--surface); border:1px solid var(--line-strong); border-radius:8px; padding:48px;
+  }
+  @media(max-width:900px){.cta-box{grid-template-columns:1fr; padding:32px;}}
+  .cta-box h2{font-size:2rem; margin-bottom:14px;}
+  .cta-box p{color:var(--text-dim); font-size:15px;}
+  form{display:flex; flex-direction:column; gap:14px;}
+  .field{display:flex; flex-direction:column; gap:6px;}
+  label{font-size:12.5px; font-family:'IBM Plex Mono',monospace; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em;}
+  input, select, textarea{
+    background:var(--bg-2); border:1px solid var(--line-strong); border-radius:var(--radius);
+    color:var(--text); padding:11px 13px; font-family:'Inter',sans-serif; font-size:14.5px;
+  }
+  input:focus, select:focus, textarea:focus{outline:none; border-color:var(--green);}
+  form .btn{margin-top:6px; justify-content:center;}
+  .form-note{font-size:12px; color:var(--text-faint); margin-top:4px;}
+
+  /* ---------- FOOTER ---------- */
+  footer{padding:48px 0 36px;}
+  .foot-top{display:flex; justify-content:space-between; flex-wrap:wrap; gap:24px; padding-bottom:32px; border-bottom:1px solid var(--line); margin-bottom:24px;}
+  .foot-cols{display:flex; gap:56px; flex-wrap:wrap;}
+  .foot-col h5{font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-faint); margin-bottom:14px;}
+  .foot-col a{display:block; color:var(--text-dim); text-decoration:none; font-size:14px; margin-bottom:10px; transition:color .2s;}
+  .foot-col a:hover{color:var(--gold);}
+  .foot-bottom{display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; color:var(--text-faint); font-size:12.5px; font-family:'IBM Plex Mono',monospace;}
+
+  .reveal{opacity:0; transform:translateY(18px); transition:opacity .7s ease, transform .7s ease;}
+  .reveal.in{opacity:1; transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="logo">
+      <svg class="mark" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="13" cy="13" r="12" stroke="#74b05f" stroke-width="1.3"/>
+        <circle cx="13" cy="13" r="6.5" stroke="#d4a73d" stroke-width="1.1"/>
+        <path d="M13 3V8M13 18V23M3 13H8M18 13H23" stroke="#74b05f" stroke-width="1.1"/>
+      </svg>
+      Crop-Prediction
+    </div>
+    <div class="navlinks">
+      <a href="#how">How it works</a>
+      <a href="#features">Platform</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#results">Results</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <a href="#contact" class="nav-cta">Request a demo</a>
+    <button class="navtoggle" aria-label="menu">MENU</button>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Precision agriculture · AI field intelligence</span>
+      <h1>Read every field <em>before</em> the season reads you.</h1>
+      <p class="lede">Terravue fuses satellite imagery, soil and weather sensors, and machine-learning yield models into one system — so you know which acres need water, which need nitrogen, and which are already on track, days before it's visible from the ground.</p>
+      <div class="hero-ctas">
+        <a href="#contact" class="btn btn-primary">Request a demo →</a>
+        <a href="#how" class="btn btn-ghost">See how it works</a>
+      </div>
+      <div class="hero-stats">
+        <div><div class="num">+18.4%</div><div class="lbl">AVG YIELD LIFT</div></div>
+        <div><div class="num">−31%</div><div class="lbl">WATER USED</div></div>
+        <div><div class="num">2,400+</div><div class="lbl">FARMS ONBOARD</div></div>
+      </div>
+    </div>
+
+    <div class="fieldscan" id="fieldscan">
+      <div class="hud">
+        <span>FIELD-07 · NORTH QUARTER</span>
+        <span id="hud-time">SCANNING…</span>
+      </div>
+      <div class="fieldgrid" id="fieldgrid"></div>
+      <div class="scanline"></div>
+      <div class="hud-bottom">
+        <div>
+          <span class="readout-val" id="readout-yield">6.8 t/ha</span>
+          <span class="legend"><i style="background:var(--green)"></i> healthy &nbsp; <i style="background:var(--gold)"></i> moderate &nbsp; <i style="background:var(--alert)"></i> stressed</span>
+        </div>
+        <div style="text-align:right;">
+          <span class="readout-val" id="readout-conf">96%</span>
+          model confidence
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="problem">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">The problem</span>
+      <h2>Most yield loss is decided weeks before harvest — and weeks before anyone notices.</h2>
+      <p>Water stress, nutrient gaps, and pest pressure quietly compound long before symptoms show up in the canopy. By the time it's visible to the eye, the yield has usually already been lost.</p>
+    </div>
+    <div class="stat-row reveal">
+      <div class="stat-cell">
+        <div class="big">30–40%</div>
+        <p>OF GLOBAL CROP YIELD LOST TO STRESS, PESTS & DISEASE EACH SEASON</p>
+      </div>
+      <div class="stat-cell">
+        <div class="big">70%</div>
+        <p>OF FRESHWATER WITHDRAWALS GLOBALLY GO TO IRRIGATION</p>
+      </div>
+      <div class="stat-cell">
+        <div class="big">10–14</div>
+        <p>DAYS AVERAGE LAG BETWEEN CROP STRESS AND VISUAL DETECTION</p>
+      </div>
+      <div class="stat-cell pos">
+        <div class="big">+18.4%</div>
+        <p>AVERAGE YIELD LIFT ACROSS TERRAVUE FIELDS, SEASON ONE</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">How it works</span>
+      <h2>From raw field signal to a decision you can act on today.</h2>
+      <p>One continuous pipeline runs every day of the season — no separate tools to reconcile, no stale reports.</p>
+    </div>
+    <div class="pipeline reveal">
+      <div class="stage">
+        <div class="dot"></div>
+        <span class="tag">STAGE 01</span>
+        <h3>Sense</h3>
+        <p>Daily satellite passes, soil moisture probes, weather stations and optional drone flyovers feed raw signal into Terravue continuously, at sub-field resolution.</p>
+      </div>
+      <div class="stage">
+        <div class="dot" style="background:var(--gold); box-shadow:0 0 0 4px rgba(212,167,61,0.15);"></div>
+        <span class="tag">STAGE 02</span>
+        <h3>Predict</h3>
+        <p>Crop-specific ML models trained on your field's own history forecast yield, water demand and disease pressure zone-by-zone, updated every 24 hours.</p>
+      </div>
+      <div class="stage">
+        <div class="dot" style="background:var(--blue); box-shadow:0 0 0 4px rgba(90,149,168,0.18);"></div>
+        <span class="tag">STAGE 03</span>
+        <h3>Recommend</h3>
+        <p>The system converts predictions into specific actions — where to irrigate, how much nitrogen to apply, which block to scout first — ranked by expected impact.</p>
+      </div>
+      <div class="stage">
+        <div class="dot" style="background:var(--alert); box-shadow:0 0 0 4px rgba(196,98,45,0.18);"></div>
+        <span class="tag">STAGE 04</span>
+        <h3>Verify</h3>
+        <p>Actual harvest and sensor data feed back into the model, so every season it understands your soil, your microclimate, and your crop a little better.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">The platform</span>
+      <h2>Everything a field team needs to act early, in one place.</h2>
+      <p>Built for agronomists and growers, not data scientists — every insight ends in a recommendation, not a chart.</p>
+    </div>
+    <div class="feat-grid reveal">
+      <div class="feat">
+        <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 5H21V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>Yield forecasting</h3>
+        <p>Zone-level yield predictions from planting through harvest, refined daily as new imagery and weather data arrive.</p>
+      </div>
+      <div class="feat">
+        <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 5 10 5 15A7 7 0 0019 15C19 10 12 2 12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        <h3>Irrigation optimization</h3>
+        <p>Soil-moisture-aware watering schedules by zone, cutting water use without risking yield during dry spells.</p>
+      </div>
+      <div class="feat">
+        <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M12 9V13M12 17H12.01M10.29 3.86L1.82 18A2 2 0 003.55 21H20.45A2 2 0 0022.18 18L13.71 3.86A2 2 0 0010.29 3.86Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>Pest & disease early warning</h3>
+        <p>Risk models flag likely outbreak zones 7–10 days ahead using canopy signal, humidity and regional pressure data.</p>
+      </div>
+      <div class="feat">
+        <svg class="ic" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/></svg>
+        <h3>Soil health mapping</h3>
+        <p>Sub-field maps of moisture, organic matter and compaction, so input decisions match what's actually in the ground.</p>
+      </div>
+      <div class="feat">
+        <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M3 15C3 15 6 8 12 8C18 8 21 15 21 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/><path d="M5 19H19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <h3>Weather-adjusted planning</h3>
+        <p>Planting, spraying and harvest windows re-ranked automatically as forecasts shift, with clear reasoning behind each change.</p>
+      </div>
+      <div class="feat">
+        <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M12 20V4M20 20V14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <h3>Resource savings tracker</h3>
+        <p>Running tally of water, fertilizer and fuel saved against a season baseline, in units and in cost.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="dashboard">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Inside the platform</span>
+      <h2>One dashboard, every field, always current.</h2>
+      <p>A live look at what a grower sees each morning before deciding where the crew goes first.</p>
+    </div>
+    <div class="dash reveal">
+      <div class="dash-top">
+        <div class="field-name">Whitmore Farms — Block 4, Winter Wheat</div>
+        <div class="status"><i></i> Live · updated 14 min ago</div>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-card">
+          <h4>Projected yield vs. baseline (t/ha)</h4>
+          <canvas id="yieldChart" height="170"></canvas>
+        </div>
+        <div class="dash-card">
+          <h4>This week's priorities</h4>
+          <div class="kpi-list">
+            <div class="kpi-row"><span class="k">Irrigate zone 4B</span><span class="v">Today</span></div>
+            <div class="kpi-row"><span class="k">Nitrogen top-up, zone 2A</span><span class="v up">+4.1% yield</span></div>
+            <div class="kpi-row"><span class="k">Scout for aphids, east edge</span><span class="v">Risk: Med</span></div>
+            <div class="kpi-row"><span class="k">Water saved this season</span><span class="v up">1.8M L</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <div class="case reveal">
+      <div>
+        <span class="eyebrow">Case study</span>
+        <p class="case-quote">"We stopped irrigating on a calendar and started irrigating on evidence. The zone maps told us exactly where the water was actually needed — nowhere else."</p>
+        <p class="case-attr"><strong>R. Whitmore</strong> — Whitmore Farms, 640 acres, winter wheat & soy</p>
+      </div>
+      <div class="case-metrics">
+        <div class="m"><div class="big">+21%</div><p>YIELD, YEAR ONE</p></div>
+        <div class="m"><div class="big">−34%</div><p>IRRIGATION WATER</p></div>
+        <div class="m"><div class="big">5 wks</div><p>TO FIRST FULL SEASON RESULT</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="contact">
+  <div class="wrap">
+    <div class="cta-box reveal">
+      <div>
+        <span class="eyebrow">Get started</span>
+        <h2>See your own fields in Terravue.</h2>
+        <p>Send us your farm size and primary crop, and we'll set up a working dashboard using your actual field boundaries — not a generic sample — for your demo.</p>
+      </div>
+      <form onsubmit="event.preventDefault(); this.querySelector('.form-note').textContent='Thanks — a Terravue agronomist will reach out within 1 business day.';">
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" type="text" placeholder="Jordan Rivera" required>
+        </div>
+        <div class="field">
+          <label for="farm">Farm size (acres)</label>
+          <input id="farm" type="number" placeholder="640" required>
+        </div>
+        <div class="field">
+          <label for="crop">Primary crop</label>
+          <select id="crop">
+            <option>Wheat</option>
+            <option>Corn / Maize</option>
+            <option>Soybean</option>
+            <option>Rice</option>
+            <option>Cotton</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="you@farm.com" required>
+        </div>
+        <button class="btn btn-primary" type="submit">Request a demo</button>
+        <p class="form-note">We'll reply within one business day.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="logo">
+        <svg class="mark" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="13" cy="13" r="12" stroke="#74b05f" stroke-width="1.3"/>
+          <circle cx="13" cy="13" r="6.5" stroke="#d4a73d" stroke-width="1.1"/>
+          <path d="M13 3V8M13 18V23M3 13H8M18 13H23" stroke="#74b05f" stroke-width="1.1"/>
+        </svg>
+        Terravue
+      </div>
+      <div class="foot-cols">
+        <div class="foot-col">
+          <h5>Platform</h5>
+          <a href="#how">How it works</a>
+          <a href="#features">Features</a>
+          <a href="#dashboard">Dashboard</a>
+        </div>
+        <div class="foot-col">
+          <h5>Company</h5>
+          <a href="#results">Case studies</a>
+          <a href="#contact">Contact</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Terravue. Field intelligence for growers.</span>
+      <span>Built with satellite, soil & weather data · Model confidence updated daily</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Field-scan hero grid
+  const grid = document.getElementById('fieldgrid');
+  const cells = [];
+  for(let i=0;i<100;i++){
+    const c = document.createElement('div');
+    c.className='cell';
+    grid.appendChild(c);
+    cells.push(c);
+  }
+  const palette = ['#3c6b41','#74b05f','#d4a73d','#c4622d'];
+  const weights = [0.35,0.4,0.18,0.07];
+  function pickColor(){
+    const r = Math.random();
+    let acc=0;
+    for(let i=0;i<weights.length;i++){acc+=weights[i]; if(r<=acc) return palette[i];}
+    return palette[0];
+  }
+  function paintCells(){
+    cells.forEach(c=>{
+      c.style.backgroundColor = pickColor();
+      c.style.opacity = (0.45+Math.random()*0.5).toFixed(2);
+    });
+  }
+  paintCells();
+  setInterval(paintCells, 2600);
+
+  // HUD readouts
+  const yieldEl = document.getElementById('readout-yield');
+  const confEl = document.getElementById('readout-conf');
+  const timeEl = document.getElementById('hud-time');
+  let t = 0;
+  setInterval(()=>{
+    t++;
+    const y = (6.4 + Math.sin(t/3)*0.6 + Math.random()*0.2).toFixed(1);
+    const conf = (93 + Math.random()*5).toFixed(0);
+    yieldEl.textContent = y + ' t/ha';
+    confEl.textContent = conf + '%';
+    timeEl.textContent = 'PASS #' + (4200 + t);
+  }, 2600);
+
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+  }, {threshold:0.12});
+  revealEls.forEach(el=>io.observe(el));
+
+  // Yield chart
+  const ctx = document.getElementById('yieldChart');
+  if(ctx && window.Chart){
+    new Chart(ctx, {
+      type:'line',
+      data:{
+        labels:['Emergence','Tillering','Stem ext.','Heading','Grain fill','Maturity'],
+        datasets:[
+          {
+            label:'Terravue-guided',
+            data:[0.4,1.6,3.2,5.1,6.6,7.4],
+            borderColor:'#74b05f',
+            backgroundColor:'rgba(116,176,95,0.12)',
+            fill:true, tension:0.35, pointRadius:3, pointBackgroundColor:'#74b05f'
+          },
+          {
+            label:'Baseline (calendar-based)',
+            data:[0.4,1.4,2.6,3.9,5.2,6.1],
+            borderColor:'#8a7638',
+            borderDash:[4,4],
+            backgroundColor:'transparent',
+            fill:false, tension:0.35, pointRadius:2, pointBackgroundColor:'#8a7638'
+          }
+        ]
+      },
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{labels:{color:'#a7b8ac', font:{family:"'IBM Plex Mono', monospace", size:11}}},
+        },
+        scales:{
+          x:{ticks:{color:'#6f8277', font:{size:10}}, grid:{color:'rgba(241,238,228,0.06)'}},
+          y:{ticks:{color:'#6f8277', font:{size:10}}, grid:{color:'rgba(241,238,228,0.06)'}}
+        }
+      }
+    });
+  }
+</script>
+</body>
+</html>
